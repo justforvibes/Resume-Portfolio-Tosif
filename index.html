@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tosif Ansari — Script Writer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#121009;
+    --paper:#f2ede1;
+    --panel:#1f1b14;
+    --panel-edge:#332c1f;
+    --amber:#e2a23b;
+    --olive:#7c8a5e;
+    --muted:#a89b82;
+    --danger:#c0604a;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing:border-box;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:var(--amber);}
+  #bg-canvas{position:fixed;inset:0;z-index:0;}
+  .grain{
+    position:fixed;inset:-50%;z-index:1;pointer-events:none;opacity:0.045;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode:overlay;
+  }
+  #spotlight{
+    position:fixed;inset:0;z-index:2;pointer-events:none;
+    background:radial-gradient(460px circle at var(--mx,50%) var(--my,30%), rgba(226,162,59,0.09), transparent 65%);
+  }
+  .filmstrip{
+    position:relative;height:14px;z-index:3;
+    background-image:repeating-linear-gradient(90deg, var(--panel-edge) 0 10px, transparent 10px 22px);
+    background-size:220px 100%;
+    opacity:0.6;
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .filmstrip{animation:reel 14s linear infinite;}
+    @keyframes reel{from{background-position:0 0;}to{background-position:-220px 0;}}
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:4rem 1.5rem 8rem;position:relative;z-index:3;}
+  footer{position:relative;z-index:3;}
+
+  .slug{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.82rem;
+    letter-spacing:0.02em;
+    color:var(--olive);
+    margin:0 0 0.6rem;
+  }
+  .slug::before{content:"INT. ";color:var(--muted);}
+  .slug.ext::before{content:"EXT. ";}
+  section{margin-top:5.5rem;position:relative;}
+  section:first-child{margin-top:0;}
+  .ghost-num{
+    position:absolute;top:-2.4rem;right:0;
+    font-family:'IBM Plex Mono',monospace;font-weight:600;
+    font-size:5.5rem;color:transparent;
+    -webkit-text-stroke:1px var(--panel-edge);
+    z-index:-1;user-select:none;line-height:1;
+    pointer-events:none;
+  }
+  h1{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:clamp(2.3rem,8vw,4.2rem);
+    line-height:1.08;
+    margin:0 0 0.5rem;
+    font-weight:600;
+    position:relative;
+    background:linear-gradient(100deg,#f2ede1 40%,var(--amber) 55%,#f2ede1 70%);
+    background-size:220% auto;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 36px rgba(226,162,59,0.18);
+  }
+  @media (prefers-reduced-motion: no-preference){
+    h1{animation:rise .8s ease both, sheen 7s ease-in-out 1.2s infinite;}
+    @keyframes rise{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes sheen{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
+  }
+  .role{font-size:1.08rem;color:var(--muted);margin:0 0 1.6rem;}
+  .lede{font-size:1.1rem;max-width:56ch;color:#d9d1bf;}
+  .contact-row{margin-top:2rem;display:flex;flex-wrap:wrap;gap:1.2rem 1.8rem;font-size:0.92rem;}
+  .contact-row a, .contact-row span{color:var(--paper);text-decoration:none;border-bottom:1px solid var(--panel-edge);padding-bottom:2px;transition:border-color .2s;}
+  .contact-row a:hover, .contact-row span:hover{border-color:var(--amber);}
+  h2{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:1.08rem;
+    font-weight:600;
+    color:var(--paper);
+    margin:0 0 1.5rem;
+    display:inline-block;
+    position:relative;
+  }
+  h2::after{
+    content:"";position:absolute;left:0;bottom:-7px;height:2px;width:0;
+    background:linear-gradient(90deg,var(--amber),transparent);
+    transition:width .6s ease;
+  }
+  .reveal.visible h2::after{width:100%;}
+  .scene{
+    border-left:2px solid var(--panel-edge);
+    padding-left:1.4rem;
+    margin-bottom:2.2rem;
+    position:relative;
+    transition:border-color .25s ease, transform .25s ease;
+  }
+  .scene:hover{border-color:var(--amber);transform:translateX(4px);}
+  .scene h3{margin:0 0 0.15rem;font-size:1.05rem;font-weight:600;}
+  .scene .where{font-size:0.88rem;color:var(--muted);margin-bottom:0.6rem;}
+  .scene ul{margin:0;padding-left:1.15rem;}
+  .scene li{margin-bottom:0.4rem;color:#d9d1bf;font-size:0.97rem;}
+  .skills{display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center;}
+  .skills span{
+    font-size:0.86rem;
+    padding:0.45rem 0.9rem;
+    border:1px solid var(--panel-edge);
+    border-radius:2px;
+    color:#d9d1bf;
+    background:var(--panel);
+    position:relative;
+    transition:border-color .2s ease, transform .2s ease, color .2s ease, box-shadow .2s ease;
+  }
+  .skills span:hover{border-color:var(--amber);transform:translateY(-3px);color:var(--paper);box-shadow:0 6px 18px rgba(226,162,59,0.18);}
+  .clips{display:flex;flex-direction:column;gap:0.9rem;}
+  .clip{
+    display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
+    padding:1rem 1.2rem;
+    background:var(--panel);
+    border:1px solid var(--panel-edge);
+    border-left:2px solid var(--panel-edge);
+    border-radius:2px;
+    text-decoration:none;
+    transition:border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+    position:relative;overflow:hidden;
+  }
+  .clip::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(100deg, transparent, rgba(226,162,59,0.14), transparent);
+    transform:translateX(-120%);transition:transform .6s ease;
+  }
+  .clip:hover::after{transform:translateX(120%);}
+  .clip:hover{border-color:var(--amber);border-left-color:var(--amber);transform:translateY(-2px) translateX(2px);box-shadow:0 10px 26px rgba(0,0,0,0.35);}
+  .clip .name{color:var(--paper);font-weight:500;font-size:0.98rem;}
+  .clip .tag{color:var(--muted);font-size:0.82rem;font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+  footer{
+    margin-top:5rem;
+    padding-top:2rem;
+    border-top:1px solid var(--panel-edge);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.85rem;
+    color:var(--muted);
+    text-align:center;
+  }
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity .7s ease, transform .7s ease;}
+  .reveal.visible{opacity:1;transform:translateY(0);}
+  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;}}
+
+  #cursor-dot, #cursor-ring{position:fixed;top:0;left:0;pointer-events:none;z-index:70;border-radius:50%;transform:translate(-50%,-50%);}
+  #cursor-dot{width:6px;height:6px;background:var(--amber);}
+  #cursor-ring{width:34px;height:34px;border:1px solid rgba(226,162,59,0.55);transition:width .2s,height .2s,border-color .2s,background .2s;}
+  #cursor-ring.hover{width:52px;height:52px;background:rgba(226,162,59,0.08);}
+  @media (pointer:coarse){#cursor-dot,#cursor-ring{display:none;}}
+
+  /* --- edit mode --- */
+  #edit-toggle{
+    display:none;
+    position:fixed;top:1.1rem;right:1.1rem;z-index:40;
+    font-family:'IBM Plex Mono',monospace;font-size:0.8rem;
+    background:var(--panel);color:var(--paper);border:1px solid var(--panel-edge);
+    padding:0.5rem 0.9rem;border-radius:2px;cursor:pointer;
+  }
+  #edit-toggle.owner-visible{display:block;}
+  #edit-toggle:hover{border-color:var(--amber);}
+  body.editing .editable{outline:1px dashed var(--panel-edge);outline-offset:3px;border-radius:2px;cursor:text;}
+  body.editing .editable:focus{outline:1px solid var(--amber);}
+  .add-btn, .rm-btn{display:none;}
+  body.editing .add-btn{
+    display:inline-flex;align-items:center;gap:0.4rem;
+    font-family:'IBM Plex Mono',monospace;font-size:0.8rem;
+    background:transparent;color:var(--olive);border:1px dashed var(--panel-edge);
+    padding:0.5rem 0.9rem;border-radius:2px;cursor:pointer;margin-top:0.4rem;
+  }
+  body.editing .add-btn:hover{border-color:var(--olive);color:var(--paper);}
+  body.editing .rm-btn{
+    display:flex;align-items:center;justify-content:center;
+    position:absolute;top:-8px;right:-8px;width:20px;height:20px;
+    background:var(--danger);color:#fff;border-radius:50%;font-size:0.7rem;
+    line-height:1;cursor:pointer;border:none;
+  }
+  #save-bar{
+    display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;
+    background:var(--panel);border-top:1px solid var(--panel-edge);
+    padding:0.9rem 1.5rem;padding-bottom:calc(0.9rem + env(safe-area-inset-bottom,0px));
+    align-items:center;justify-content:center;gap:1rem;
+  }
+  body.editing #save-bar{display:flex;}
+  #save-bar span{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--muted);}
+  #save-bar button{
+    font-family:'IBM Plex Mono',monospace;font-size:0.82rem;
+    padding:0.55rem 1.1rem;border-radius:2px;cursor:pointer;border:1px solid var(--panel-edge);
+  }
+  #save-btn{background:var(--amber);color:var(--ink);border-color:var(--amber);font-weight:600;}
+  #exit-btn{background:transparent;color:var(--paper);}
+
+  /* --- book a demo --- */
+  #book-demo{
+    position:fixed;left:50%;bottom:1.6rem;transform:translateX(-50%);
+    z-index:45;
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:0.95rem;
+    letter-spacing:0.01em;
+    background:var(--amber);color:var(--ink);
+    border:none;border-radius:40px;
+    padding:0.95rem 1.8rem;
+    box-shadow:0 6px 28px rgba(226,162,59,0.4);
+    cursor:pointer;
+    display:flex;align-items:center;gap:0.5rem;
+    transition:transform .15s ease;
+  }
+  #book-demo:hover{box-shadow:0 8px 34px rgba(226,162,59,0.55);}
+  body.editing #book-demo{display:none;}
+  @media (prefers-reduced-motion: no-preference){
+    #book-demo{animation:pulse 2.6s ease-in-out infinite;}
+    @keyframes pulse{0%,100%{box-shadow:0 6px 28px rgba(226,162,59,0.4);}50%{box-shadow:0 6px 36px rgba(226,162,59,0.7);}}
+  }
+
+  #demo-overlay{
+    display:none;position:fixed;inset:0;z-index:60;
+    background:rgba(10,9,6,0.76);backdrop-filter:blur(2px);
+    align-items:center;justify-content:center;
+    padding:1.5rem;
+  }
+  #demo-overlay.open{display:flex;}
+  #demo-modal{
+    width:100%;max-width:440px;
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:6px;
+    padding:2rem 1.8rem;position:relative;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  @media (prefers-reduced-motion: no-preference){
+    #demo-overlay.open #demo-modal{animation:pop .25s ease both;}
+    @keyframes pop{from{opacity:0;transform:scale(0.94);}to{opacity:1;transform:scale(1);}}
+  }
+  #demo-close{
+    position:absolute;top:0.9rem;right:0.9rem;
+    background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;line-height:1;
+  }
+  #demo-close:hover{color:var(--paper);}
+  .demo-slug{font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--olive);letter-spacing:0.02em;margin:0 0 0.9rem;}
+  .demo-title{font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;margin:0 0 1.5rem;}
+  .demo-options{display:flex;flex-direction:column;gap:0.8rem;}
+  .demo-opt{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--ink);border:1px solid var(--panel-edge);border-radius:4px;
+    padding:1rem 1.2rem;color:var(--paper);font-size:1rem;font-weight:500;
+    cursor:pointer;text-align:left;width:100%;font-family:inherit;
+    transition:border-color .2s, transform .2s;
+  }
+  .demo-opt:hover{border-color:var(--amber);color:var(--amber);transform:translateX(3px);}
+  .demo-opt span{font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:0.85rem;}
+  .demo-opt:hover span{color:var(--amber);}
+  #demo-step2 p{color:#d9d1bf;font-size:0.98rem;margin:0 0 1.3rem;}
+  .demo-number{
+    font-family:'IBM Plex Mono',monospace;font-size:1.15rem;color:var(--paper);
+    margin:0 0 1.4rem;letter-spacing:0.02em;
+  }
+  #wa-btn{
+    display:flex;align-items:center;justify-content:center;gap:0.6rem;width:100%;
+    background:#3fae5c;color:#fff;border:none;border-radius:4px;
+    padding:0.9rem;font-size:1rem;font-weight:600;cursor:pointer;text-decoration:none;
+    font-family:'IBM Plex Sans',sans-serif;transition:background .2s;
+  }
+  #wa-btn:hover{background:#359850;}
+  #demo-back{
+    display:block;margin-top:1rem;background:none;border:none;color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;font-size:0.82rem;cursor:pointer;padding:0;
+  }
+  #demo-back:hover{color:var(--paper);}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div class="grain"></div>
+<div id="spotlight"></div>
+<div id="cursor-ring"></div>
+<div id="cursor-dot"></div>
+<div class="filmstrip"></div>
+<button id="edit-toggle" type="button">✎ Edit</button>
+<div class="wrap">
+
+  <section>
+    <p class="slug">SCENE 1 — INTRODUCTION</p>
+    <h1 class="editable" contenteditable="false">Tosif Ansari</h1>
+    <p class="role editable" contenteditable="false">Script Writer — Short-Form Video &amp; Reels</p>
+    <p class="lede editable" contenteditable="false">I write hook-driven scripts for Shorts and Reels, edit the final cut, and run content across YouTube channels, blogs, and web-novel writing — research, script, edit, publish, end to end.</p>
+    <div class="contact-row">
+      <a href="mailto:ansaritosif619@gmail.com">ansaritosif619@gmail.com</a>
+      <span class="editable" contenteditable="false">9316650796</span>
+      <span class="editable" contenteditable="false">Gujarat, India</span>
+    </div>
+  </section>
+
+  <section>
+    <span class="ghost-num">02</span>
+    <p class="slug ext">SCENE 2 — WHERE I'VE WORKED</p>
+    <h2>Experience</h2>
+
+    <div class="scene">
+      <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      <h3 class="editable" contenteditable="false">Freelance Scriptwriter &amp; Video Editor</h3>
+      <p class="where editable" contenteditable="false">Self-Employed / Fiverr — Ongoing</p>
+      <ul>
+        <li class="editable" contenteditable="false">Write and edit short-form scripts for YouTube and social video, adapting tone and pacing per platform.</li>
+        <li class="editable" contenteditable="false">Deliver scriptwriting on Fiverr across a client portfolio spanning multiple genres.</li>
+        <li class="editable" contenteditable="false">Wrote a client-facing English script in a vulnerable, first-person style for a US-audience channel.</li>
+        <li class="editable" contenteditable="false">Handle editing in-house, so scripts are written with the final cut and pacing in mind.</li>
+      </ul>
+    </div>
+
+    <div class="scene">
+      <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      <h3 class="editable" contenteditable="false">Scriptwriter &amp; Channel Operator</h3>
+      <p class="where editable" contenteditable="false">History YouTube Channel (Indian &amp; World History) — Ongoing</p>
+      <ul>
+        <li class="editable" contenteditable="false">Research and write full scripts on real historical topics — Vijayanagara Empire, Koh-i-Noor, Ashoka, Rani Abbakka — for a Gen Z audience.</li>
+        <li class="editable" contenteditable="false">Punchy, sarcastic, meme-ready Roman Hinglish built to hold attention from the first second.</li>
+        <li class="editable" contenteditable="false">Own the full pipeline: draft, personal-voice pass, colloquial edit, self-interrupting reaction beats.</li>
+      </ul>
+    </div>
+
+    <div class="scene">
+      <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      <h3 class="editable" contenteditable="false">Scriptwriter &amp; Content Packager</h3>
+      <p class="where editable" contenteditable="false">Web Novel / Manhwa YouTube Channel — Ongoing</p>
+      <ul>
+        <li class="editable" contenteditable="false">Full content packages — script, title, description, tags, thumbnail concept — for Shadow Slave, Omniscient Reader's Viewpoint, and manhwa character rankings.</li>
+        <li class="editable" contenteditable="false">Gen Z, sarcastic style tuned to a romance/character-analysis audience.</li>
+      </ul>
+    </div>
+
+    <div class="scene">
+      <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      <h3 class="editable" contenteditable="false">Blogger &amp; Content Operator</h3>
+      <p class="where editable" contenteditable="false">Multiple Blogs &amp; Content Sites — Ongoing</p>
+      <ul>
+        <li class="editable" contenteditable="false">Built and run a gaming review blog drawing organic traffic with no active promotion.</li>
+        <li class="editable" contenteditable="false">Run a Pinterest + Blogger operation in the aesthetic/lifestyle niche, at volume.</li>
+        <li class="editable" contenteditable="false">Write and maintain an original web-novel blog — full narrative, long-form and short-form.</li>
+      </ul>
+    </div>
+
+    <button class="add-btn" id="add-role" type="button">+ Add role</button>
+  </section>
+
+  <section>
+    <span class="ghost-num">03</span>
+    <p class="slug">SCENE 3 — SKILLS</p>
+    <h2>Core Skills</h2>
+    <div class="skills" id="skills-list">
+      <span class="editable" contenteditable="false">Short-form scriptwriting (hooks, pacing, visual direction)<button class="rm-btn" type="button" aria-label="Remove">×</button></span>
+      <span class="editable" contenteditable="false">Trend &amp; viral-content research<button class="rm-btn" type="button" aria-label="Remove">×</button></span>
+      <span class="editable" contenteditable="false">Video editing<button class="rm-btn" type="button" aria-label="Remove">×</button></span>
+      <span class="editable" contenteditable="false">Content writing &amp; blogging — English &amp; Hinglish<button class="rm-btn" type="button" aria-label="Remove">×</button></span>
+      <span class="editable" contenteditable="false">Self-directed execution<button class="rm-btn" type="button" aria-label="Remove">×</button></span>
+      <span class="editable" contenteditable="false">Sensitive subjects, engaging tone<button class="rm-btn" type="button" aria-label="Remove">×</button></span>
+    </div>
+    <button class="add-btn" id="add-skill" type="button">+ Add skill</button>
+  </section>
+
+  <section>
+    <span class="ghost-num">04</span>
+    <p class="slug ext">SCENE 4 — WORK SAMPLES</p>
+    <h2>Selected Clips &amp; Sites</h2>
+    <div class="clips" id="clips-list">
+      <a class="clip" href="https://youtu.be/d8KV5t9YXCY" target="_blank" rel="noopener">
+        <span class="name">Solo project — video</span><span class="tag">YouTube</span>
+        <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      </a>
+      <a class="clip" href="https://youtu.be/HGe-SUyPZ38" target="_blank" rel="noopener">
+        <span class="name">B-roll edit</span><span class="tag">YouTube</span>
+        <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      </a>
+      <a class="clip" href="https://www.facebook.com/share/v/1F8J6eWL6X/" target="_blank" rel="noopener">
+        <span class="name">Solo project — video</span><span class="tag">Facebook</span>
+        <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      </a>
+      <a class="clip" href="https://gamereviewsguide.online" target="_blank" rel="noopener">
+        <span class="name">Game Reviews Guide</span><span class="tag">Blog</span>
+        <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      </a>
+      <a class="clip" href="https://talwebnovel.blogspot.com" target="_blank" rel="noopener">
+        <span class="name">The Accidental Legend</span><span class="tag">Web Novel</span>
+        <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      </a>
+      <a class="clip" href="https://worldstrendhub.in" target="_blank" rel="noopener">
+        <span class="name">World's Trend Hub</span><span class="tag">Blog</span>
+        <button class="rm-btn" type="button" aria-label="Remove">×</button>
+      </a>
+    </div>
+    <button class="add-btn" id="add-link" type="button">+ Add link</button>
+  </section>
+
+  <footer>FADE OUT.</footer>
+</div>
+<div class="filmstrip"></div>
+
+<div id="save-bar">
+  <span>Edit mode — click any text to change it</span>
+  <button id="exit-btn" type="button">Exit</button>
+  <button id="save-btn" type="button">Save changes</button>
+</div>
+
+<button id="book-demo" type="button">🎬 Book a Demo</button>
+
+<div id="demo-overlay">
+  <div id="demo-modal">
+    <button id="demo-close" type="button" aria-label="Close">×</button>
+
+    <div id="demo-step1">
+      <p class="demo-slug">CUT TO:</p>
+      <h3 class="demo-title">What do you need?</h3>
+      <div class="demo-options">
+        <button class="demo-opt" type="button" data-service="Script Writing">Script Writing <span>→</span></button>
+        <button class="demo-opt" type="button" data-service="Video Editing">Video Editing <span>→</span></button>
+      </div>
+    </div>
+
+    <div id="demo-step2" style="display:none;">
+      <p class="demo-slug">ACTION:</p>
+      <h3 class="demo-title" id="demo-step2-title">Send a reference</h3>
+      <p>Send a reference script, video, or a link to this number on WhatsApp — I'll get back to you with a sample.</p>
+      <p class="demo-number">📱 +91 93166 50796</p>
+      <a id="wa-btn" href="#" target="_blank" rel="noopener">Open WhatsApp</a>
+      <button id="demo-back" type="button">← Back</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var reduceMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
+  var fine = window.matchMedia('(pointer:fine)').matches;
+
+  /* background particle network */
+  var canvas = document.getElementById('bg-canvas');
+  var ctx = canvas.getContext('2d');
+  var W, H, particles = [];
+  var mouseX = -9999, mouseY = -9999;
+  var COLORS = ['226,162,59','124,138,94','226,162,59'];
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  function initParticles(){
+    var count = Math.min(70, Math.floor((W*H)/22000));
+    particles = [];
+    for(var i=0;i<count;i++){
+      particles.push({
+        x: Math.random()*W, y: Math.random()*H,
+        vx: (Math.random()-0.5)*0.25, vy: (Math.random()-0.5)*0.25,
+        r: Math.random()*1.6+0.6,
+        c: COLORS[i % COLORS.length]
+      });
+    }
+  }
+  function step(){
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<particles.length;i++){
+      var p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<0||p.x>W) p.vx*=-1;
+      if(p.y<0||p.y>H) p.vy*=-1;
+      var dx = mouseX-p.x, dy = mouseY-p.y;
+      var d2 = dx*dx+dy*dy;
+      if(d2 < 16000){ p.x -= dx*0.003; p.y -= dy*0.003; }
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba('+p.c+',0.55)';
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fill();
+      for(var j=i+1;j<particles.length;j++){
+        var q = particles[j];
+        var ddx = p.x-q.x, ddy = p.y-q.y;
+        var dist = Math.sqrt(ddx*ddx+ddy*ddy);
+        if(dist < 130){
+          ctx.strokeStyle = 'rgba('+p.c+','+(0.14*(1-dist/130))+')';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(step);
+  }
+  resize(); initParticles();
+  window.addEventListener('resize', function(){ resize(); initParticles(); });
+  requestAnimationFrame(step);
+
+  if(fine){
+    document.addEventListener('mousemove', function(e){
+      mouseX = e.clientX; mouseY = e.clientY;
+      document.documentElement.style.setProperty('--mx', e.clientX + 'px');
+      document.documentElement.style.setProperty('--my', e.clientY + 'px');
+    });
+    var dot = document.getElementById('cursor-dot');
+    var ring = document.getElementById('cursor-ring');
+    var rx=0, ry=0;
+    function cursorLoop(){
+      rx += (mouseX-rx)*0.16; ry += (mouseY-ry)*0.16;
+      dot.style.transform = 'translate('+mouseX+'px,'+mouseY+'px) translate(-50%,-50%)';
+      ring.style.transform = 'translate('+rx+'px,'+ry+'px) translate(-50%,-50%)';
+      requestAnimationFrame(cursorLoop);
+    }
+    cursorLoop();
+    document.querySelectorAll('a, button').forEach(function(el){
+      el.addEventListener('mouseenter', function(){ ring.classList.add('hover'); });
+      el.addEventListener('mouseleave', function(){ ring.classList.remove('hover'); });
+    });
+    var demoBtn = document.getElementById('book-demo');
+    demoBtn.addEventListener('mousemove', function(e){
+      var r = demoBtn.getBoundingClientRect();
+      var mx = (e.clientX - r.left - r.width/2) * 0.25;
+      var my = (e.clientY - r.top - r.height/2) * 0.25;
+      demoBtn.style.transform = 'translateX(calc(-50% + '+mx+'px)) translateY('+my+'px)';
+    });
+    demoBtn.addEventListener('mouseleave', function(){ demoBtn.style.transform = 'translateX(-50%)'; });
+  } else {
+    document.getElementById('cursor-dot').style.display='none';
+    document.getElementById('cursor-ring').style.display='none';
+  }
+
+  /* scroll reveal */
+  document.querySelectorAll('section, .scene, .clip').forEach(function(el){
+    el.classList.add('reveal');
+  });
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add('visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.12});
+    document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('visible'); });
+  }
+
+  var body = document.body;
+  var toggleBtn = document.getElementById('edit-toggle');
+  var exitBtn = document.getElementById('exit-btn');
+  var saveBtn = document.getElementById('save-btn');
+  var artifactCap = null;
+
+  function setEditable(on){
+    document.querySelectorAll('.editable').forEach(function(el){
+      el.setAttribute('contenteditable', on ? 'true' : 'false');
+    });
+  }
+  function enterEdit(){ body.classList.add('editing'); setEditable(true); }
+  function exitEdit(){ body.classList.remove('editing'); setEditable(false); }
+
+  toggleBtn.addEventListener('click', function(){
+    if(body.classList.contains('editing')){ exitEdit(); } else { enterEdit(); }
+  });
+  exitBtn.addEventListener('click', exitEdit);
+
+  document.getElementById('add-skill').addEventListener('click', function(){
+    var text = window.prompt('New skill:');
+    if(!text) return;
+    var span = document.createElement('span');
+    span.className = 'editable';
+    span.setAttribute('contenteditable','true');
+    span.textContent = text;
+    var rm = document.createElement('button');
+    rm.className = 'rm-btn'; rm.type = 'button'; rm.textContent = '×';
+    span.appendChild(rm);
+    document.getElementById('skills-list').appendChild(span);
+  });
+
+  document.getElementById('add-link').addEventListener('click', function(){
+    var name = window.prompt('Link title (e.g. "New project"):');
+    if(!name) return;
+    var url = window.prompt('URL (https://...):');
+    if(!url) return;
+    var tag = window.prompt('Tag (e.g. "YouTube", "Blog"):', 'Link') || 'Link';
+    var a = document.createElement('a');
+    a.className = 'clip'; a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    a.innerHTML = '<span class="name">'+name+'</span><span class="tag">'+tag+'</span>';
+    var rm = document.createElement('button');
+    rm.className = 'rm-btn'; rm.type = 'button'; rm.textContent = '×';
+    a.appendChild(rm);
+    document.getElementById('clips-list').appendChild(a);
+  });
+
+  document.getElementById('add-role').addEventListener('click', function(){
+    var div = document.createElement('div');
+    div.className = 'scene';
+    div.innerHTML = '<button class="rm-btn" type="button">×</button>'
+      + '<h3 class="editable" contenteditable="true">New role</h3>'
+      + '<p class="where editable" contenteditable="true">Company — Dates</p>'
+      + '<ul><li class="editable" contenteditable="true">What you did</li></ul>';
+    this.parentNode.insertBefore(div, this);
+  });
+
+  document.addEventListener('click', function(e){
+    if(e.target.classList.contains('rm-btn')){
+      var toRemove = e.target.closest('.scene') || e.target.closest('.clip') || e.target.parentElement;
+      if(toRemove){ e.preventDefault(); toRemove.remove(); }
+    }
+  });
+
+  var demoOverlay = document.getElementById('demo-overlay');
+  var demoStep1 = document.getElementById('demo-step1');
+  var demoStep2 = document.getElementById('demo-step2');
+  var demoStep2Title = document.getElementById('demo-step2-title');
+  var waBtn = document.getElementById('wa-btn');
+  var WA_NUMBER = '919316650796';
+
+  function openDemo(){ demoOverlay.classList.add('open'); demoStep1.style.display='block'; demoStep2.style.display='none'; }
+  function closeDemo(){ demoOverlay.classList.remove('open'); }
+
+  document.getElementById('book-demo').addEventListener('click', openDemo);
+  document.getElementById('demo-close').addEventListener('click', closeDemo);
+  demoOverlay.addEventListener('click', function(e){ if(e.target === demoOverlay) closeDemo(); });
+
+  document.querySelectorAll('.demo-opt').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var service = btn.getAttribute('data-service');
+      demoStep2Title.textContent = service + ' — Reference';
+      var msg = encodeURIComponent('Hi Tosif, I\'d like a demo for ' + service + '. Here is what I need:');
+      waBtn.href = 'https://wa.me/' + WA_NUMBER + '?text=' + msg;
+      demoStep1.style.display = 'none';
+      demoStep2.style.display = 'block';
+    });
+  });
+  document.getElementById('demo-back').addEventListener('click', function(){
+    demoStep2.style.display = 'none';
+    demoStep1.style.display = 'block';
+  });
+
+  async function init(){
+    if(typeof claude === 'undefined' || !claude.use) return;
+    try {
+      var user = await claude.use('user');
+      if(user && user.isOwner && user.isOwner()){
+        toggleBtn.classList.add('owner-visible');
+      } else {
+        return;
+      }
+    } catch(e){ return; }
+    try { artifactCap = await claude.use('artifact'); } catch(e){}
+  }
+  init();
+
+  saveBtn.addEventListener('click', async function(){
+    exitEdit();
+    var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    if(artifactCap && artifactCap.publish){
+      saveBtn.textContent = 'Saving…';
+      try {
+        await artifactCap.publish(html);
+      } catch(e){
+        alert('Could not save — try again.');
+        saveBtn.textContent = 'Save changes';
+      }
+    } else {
+      alert('Saving needs this page open on claude.ai.');
+    }
+  });
+})();
+</script>
+</body>
+</html>
